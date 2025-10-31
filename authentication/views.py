@@ -4,7 +4,7 @@ from .serializers import UserSerializer, Profile, UserUpdateSerializer
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.response import Response
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.shortcuts import get_object_or_404
 
 class UserDetailView(APIView):
@@ -25,7 +25,7 @@ def signup_view(request):
 
 @api_view(['PUT', 'PATCH'])
 @permission_classes([IsAuthenticated])
-@parser_classes([MultiPartParser, FormParser])
+@parser_classes([MultiPartParser, FormParser, JSONParser])
 def update_profile(request):
     user = request.user
     serializer = UserUpdateSerializer(user, data=request.data, partial=True)

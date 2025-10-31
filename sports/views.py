@@ -122,7 +122,7 @@ def team_list(request):
         if serializer.is_valid():
             # Ensure the sport exists and is a team sport
             sport = get_object_or_404(Sport, pk=serializer.validated_data['sport_id'])
-            if not sport.team:
+            if not sport.isTeamBased:
                 return Response(
                     {"error": "This sport does not support teams"}, 
                     status=status.HTTP_400_BAD_REQUEST

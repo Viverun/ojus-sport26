@@ -7,7 +7,7 @@ User = get_user_model()
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email']
+        fields = ['moodleID', 'username', 'email']
 
 class SportSerializer(serializers.ModelSerializer):
     primary = UserSerializer(read_only=True)
@@ -15,7 +15,7 @@ class SportSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Sport
-        fields = ['id', 'name', 'description', 'team', 'primary', 'secondary']
+        fields = ['id', 'name', 'description', 'isTeamBased', 'primary', 'secondary']
 
 class RegistrationSerializer(serializers.ModelSerializer):
     student = UserSerializer(read_only=True)
@@ -46,7 +46,7 @@ class TeamSerializer(serializers.ModelSerializer):
         member_ids = validated_data.pop('member_ids', [])
         team = Team.objects.create(**validated_data)
         if member_ids:
-            team.members.set(User.objects.filter(id__in=member_ids))
+            team.members.set(User.objects.filter(moodleID__in=member_ids))
         return team
 
     def update(self, instance, validated_data):
@@ -55,5 +55,5 @@ class TeamSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
         instance.save()
         if member_ids is not None:
-            instance.members.set(User.objects.filter(id__in=member_ids))
+            instance.members.set(User.objects.filter(moodleID__in=member_ids))
         return instance
