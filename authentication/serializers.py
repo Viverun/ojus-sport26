@@ -5,11 +5,6 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
-class AuthorSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['moodleID', 'username', 'first_name', 'last_name', 'email']
-
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     password2 = serializers.CharField(write_only=True, required=True)
@@ -31,7 +26,7 @@ class UserSerializer(serializers.ModelSerializer):
         validated_data.pop('password2')
         user = Student.objects.create_user(
             email=validated_data['email'],
-            username=validated_data['username'],
+            moodleID=validated_data['moodleID'],
             password=validated_data['password'],
             profile_image=validated_data.get('profile_image'),
         )
