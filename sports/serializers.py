@@ -20,14 +20,29 @@ class SportSerializer(serializers.ModelSerializer):
 class RegistrationSerializer(serializers.ModelSerializer):
     student = UserSerializer(read_only=True)
     sport = SportSerializer(read_only=True)
-    sport_id = serializers.IntegerField(write_only=True)
-    
+    sport_slug = serializers.SlugField(write_only=True)
+
     class Meta:
         model = Registration
-        fields = ['id', 'student', 'sport', 'sport_id', 'year', 'branch', 
-                 'registered_on', 'registration_modified']
+        fields = [
+            'id', 'student', 'sport', 'sport_slug',
+            'year', 'branch', 'registered_on', 'registration_modified'
+        ]
         read_only_fields = ['registered_on', 'registration_modified']
 
+    def create(self, validated_data):
+        sport_slug = validated_data.pop('sport_slug')
+        try:
+            sport = Sport.objects.get(slug=sport_slug)
+        except Sport.DoesNotExist:
+            raise serializers.ValidationError({"sport_slug": "Invalid sport slug"})
+        print(self.context['request'].user)
+        registration = Registration.objects.create(
+            student=self.context['request'].user,
+            sport=sport,
+            **validated_data
+        )
+        return registration
 class TeamSerializer(serializers.ModelSerializer):
     members = UserSerializer(many=True, read_only=True)
     sport = SportSerializer(read_only=True)

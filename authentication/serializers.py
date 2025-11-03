@@ -41,5 +41,5 @@ class Profile(serializers.ModelSerializer):
 
     class Meta:
         model = Student
-        fields = ['first_name', 'last_name', 'username', 'email', 'profile_image', 'phone_number']
+        fields = ['first_name', 'last_name', 'username', 'email', 'profile_image', 'phone_number', "moodleID"]
 

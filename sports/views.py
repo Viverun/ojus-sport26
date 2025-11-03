@@ -33,7 +33,6 @@ def sport_detail(request, pk):
         serializer = SportSerializer(sport)
         return Response(serializer.data)
     
-    # Only primary or secondary coordinators can modify
     if request.user != sport.primary and request.user not in sport.secondary.all():
         return Response(status=status.HTTP_403_FORBIDDEN)
     
@@ -53,23 +52,34 @@ def sport_detail(request, pk):
 @permission_classes([IsAuthenticated])
 def registration_list(request):
     if request.method == 'GET':
-        # If user is a coordinator, show all registrations for their sports
         coordinated_sports = Sport.objects.filter(
             Q(primary=request.user) | Q(secondary=request.user)
         )
         if coordinated_sports.exists():
             registrations = Registration.objects.filter(sport__in=coordinated_sports)
         else:
-            # Otherwise show only user's registrations
             registrations = Registration.objects.filter(student=request.user)
         
-        serializer = RegistrationSerializer(registrations, many=True)
+        serializer = RegistrationSerializer(registrations, many=True, context={'request': request})
         return Response(serializer.data)
     
     elif request.method == 'POST':
-        serializer = RegistrationSerializer(data=request.data)
+        serializer = RegistrationSerializer(data=request.data, context={'request': request})
+        sport_slug = request.data.get('sport_slug')
+        sport = get_object_or_404(Sport, slug=sport_slug)
+
+        # preventing duplicate entry
+        existing_registration = Registration.objects.filter(
+            student=request.user, sport=sport
+        ).first()
+
+        if existing_registration:
+            return Response(
+                {"error": "You have already registered for this event."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         if serializer.is_valid():
-            serializer.save(student=request.user)
+            serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -77,19 +87,18 @@ def registration_list(request):
 @permission_classes([IsAuthenticated])
 def registration_detail(request, pk):
     registration = get_object_or_404(Registration, pk=pk)
-    
-    # Check if user is authorized
+
     if (request.user != registration.student and 
         request.user != registration.sport.primary and 
         request.user not in registration.sport.secondary.all()):
         return Response(status=status.HTTP_403_FORBIDDEN)
     
     if request.method == 'GET':
-        serializer = RegistrationSerializer(registration)
+        serializer = RegistrationSerializer(registration, context={'request': request})
         return Response(serializer.data)
     
     elif request.method == 'PUT':
-        serializer = RegistrationSerializer(registration, data=request.data)
+        serializer = RegistrationSerializer(registration, data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
@@ -104,14 +113,12 @@ def registration_detail(request, pk):
 @permission_classes([IsAuthenticated])
 def team_list(request):
     if request.method == 'GET':
-        # If user is a coordinator, show all teams for their sports
         coordinated_sports = Sport.objects.filter(
             Q(primary=request.user) | Q(secondary=request.user)
         )
         if coordinated_sports.exists():
             teams = Team.objects.filter(sport__in=coordinated_sports)
         else:
-            # Otherwise show teams user is a member of
             teams = Team.objects.filter(members=request.user)
         
         serializer = TeamSerializer(teams, many=True)
@@ -120,7 +127,6 @@ def team_list(request):
     elif request.method == 'POST':
         serializer = TeamSerializer(data=request.data)
         if serializer.is_valid():
-            # Ensure the sport exists and is a team sport
             sport = get_object_or_404(Sport, pk=serializer.validated_data['sport_id'])
             if not sport.isTeamBased:
                 return Response(
@@ -136,7 +142,6 @@ def team_list(request):
 def team_detail(request, pk):
     team = get_object_or_404(Team, pk=pk)
     
-    # Check if user is authorized (coordinator or team member)
     if (request.user not in team.members.all() and 
         request.user != team.sport.primary and 
         request.user not in team.sport.secondary.all()):
@@ -154,7 +159,6 @@ def team_detail(request, pk):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     elif request.method == 'DELETE':
-        # Only coordinators can delete teams
         if (request.user != team.sport.primary and 
             request.user not in team.sport.secondary.all()):
             return Response(status=status.HTTP_403_FORBIDDEN)

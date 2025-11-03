@@ -9,7 +9,7 @@ class SportAdmin(admin.ModelAdmin):
     filter_horizontal = ('secondary',)
 
     def is_team_sport(self, obj):
-        return obj.team
+        return obj.isTeamBased
     is_team_sport.short_description = 'Team Sport'
     is_team_sport.boolean = True  # This will display a nice checkmark icon
 

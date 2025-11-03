@@ -1,14 +1,21 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 User = get_user_model()
+from django.utils.text import slugify
 
 # Create your models here.
 class Sport(models.Model):
+    slug = models.SlugField(unique=True, blank=True, max_length=255)
     name = models.CharField(max_length=50)
     description = models.TextField(blank=True)
     isTeamBased = models.BooleanField(default=False)
     primary = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='primary_sports')
     secondary = models.ManyToManyField(User, related_name='secondary_sports')
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name

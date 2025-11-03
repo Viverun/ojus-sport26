@@ -2,10 +2,12 @@
 
 A Django REST API for managing sports events, registrations, and teams.
 
-## Authentication Endpoints
+NOTE: Authentication endpoints are mounted at `/auth/` and sports endpoints are mounted at `/api/` (see project `urls.py`).
+
+## Authentication Endpoints (base: `/auth/`)
 
 ### 1. Login
-- **URL:** `/api/login/`
+- **URL:** `/auth/login/`
 - **Method:** `POST`
 - **Request Body:**
 ```json
@@ -23,7 +25,7 @@ A Django REST API for managing sports events, registrations, and teams.
 ```
 
 ### 2. Token Refresh
-- **URL:** `/api/token/refresh/`
+- **URL:** `/auth/token/refresh/`
 - **Method:** `POST`
 - **Request Body:**
 ```json
@@ -39,13 +41,13 @@ A Django REST API for managing sports events, registrations, and teams.
 ```
 
 ### 3. User Details
-- **URL:** `/api/me/`
+- **URL:** `/auth/me/`
 - **Method:** `GET`
 - **Authentication:** Required
 - **Response:**
 ```json
 {
-    "moodleID": "integer",
+    "moodleID": 123,
     "username": "string",
     "email": "string",
     "first_name": "string",
@@ -56,12 +58,12 @@ A Django REST API for managing sports events, registrations, and teams.
 ```
 
 ### 4. Sign Up
-- **URL:** `/api/signup/`
+- **URL:** `/auth/signup/`
 - **Method:** `POST`
 - **Request Body:**
 ```json
 {
-    "moodleID": "integer",
+    "moodleID": 123,
     "username": "string",
     "password": "string",
     "email": "string"
@@ -75,11 +77,11 @@ A Django REST API for managing sports events, registrations, and teams.
 ```
 
 ### 5. Update Profile
-- **URL:** `/api/me/update/`
+- **URL:** `/auth/me/update/`
 - **Methods:** `PUT`, `PATCH`
 - **Authentication:** Required
 - **Content-Type:** `multipart/form-data` or `application/json`
-- **Request Body:**
+- **Request Body (partial allowed):**
 ```json
 {
     "first_name": "string",
@@ -90,7 +92,7 @@ A Django REST API for managing sports events, registrations, and teams.
 }
 ```
 
-## Sports Management Endpoints
+## Sports Management Endpoints (base: `/api/`)
 
 ### 1. Sports List
 - **URL:** `/api/sports/`
@@ -100,18 +102,18 @@ A Django REST API for managing sports events, registrations, and teams.
 ```json
 [
     {
-        "id": "integer",
+        "id": 1,
         "name": "string",
         "description": "string",
-        "isTeamBased": "boolean",
+        "isTeamBased": true,
         "primary": {
-            "moodleID": "integer",
+            "moodleID": 123,
             "username": "string",
             "email": "string"
         },
         "secondary": [
             {
-                "moodleID": "integer",
+                "moodleID": 456,
                 "username": "string",
                 "email": "string"
             }
@@ -124,7 +126,7 @@ A Django REST API for managing sports events, registrations, and teams.
 {
     "name": "string",
     "description": "string",
-    "isTeamBased": "boolean"
+    "isTeamBased": true
 }
 ```
 
@@ -138,7 +140,7 @@ A Django REST API for managing sports events, registrations, and teams.
 {
     "name": "string",
     "description": "string",
-    "isTeamBased": "boolean"
+    "isTeamBased": true
 }
 ```
 
@@ -150,31 +152,31 @@ A Django REST API for managing sports events, registrations, and teams.
 ```json
 [
     {
-        "id": "integer",
+        "id": 1,
         "student": {
-            "moodleID": "integer",
+            "moodleID": 123,
             "username": "string",
             "email": "string"
         },
         "sport": {
-            "id": "integer",
+            "id": 1,
             "name": "string",
             "description": "string",
-            "isTeamBased": "boolean"
+            "isTeamBased": true
         },
-        "year": "integer",
-        "branch": "string",
-        "registered_on": "datetime",
-        "registration_modified": "datetime"
+        "year": 3,
+        "branch": "CSE",
+        "registered_on": "2025-01-01T12:00:00Z",
+        "registration_modified": "2025-01-02T12:00:00Z"
     }
 ]
 ```
 - **POST Request Body:**
 ```json
 {
-    "sport_id": "integer",
-    "year": "integer",
-    "branch": "string"
+    "sport_id": 1,
+    "year": 3,
+    "branch": "CSE"
 }
 ```
 
@@ -192,18 +194,18 @@ A Django REST API for managing sports events, registrations, and teams.
 ```json
 [
     {
-        "id": "integer",
-        "name": "string",
-        "branch": "string",
+        "id": 1,
+        "name": "Team A",
+        "branch": "CSE",
         "sport": {
-            "id": "integer",
+            "id": 1,
             "name": "string",
             "description": "string",
-            "isTeamBased": "boolean"
+            "isTeamBased": true
         },
         "members": [
             {
-                "moodleID": "integer",
+                "moodleID": 123,
                 "username": "string",
                 "email": "string"
             }
@@ -216,8 +218,8 @@ A Django REST API for managing sports events, registrations, and teams.
 {
     "name": "string",
     "branch": "string",
-    "sport_id": "integer",
-    "member_ids": ["integer"]
+    "sport_id": 1,
+    "member_ids": [123, 456]
 }
 ```
 
@@ -248,10 +250,10 @@ The API returns appropriate HTTP status codes:
 - 404: Not Found
 - 500: Server Error
 
-Error responses include detail messages explaining the error:
+Error responses include detail messages explaining the error, usually as a JSON object with a `detail` or field-specific errors, e.g.:
 
 ```json
 {
-    "error": "Error message description"
+    "detail": "Error message description"
 }
 ```

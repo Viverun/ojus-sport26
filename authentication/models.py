@@ -34,10 +34,27 @@ class StudentManager(BaseUserManager):
         return self._create_user(moodleID, password, **extra_fields)
     
 class Student(AbstractUser):
+    YEAR_CHOICES = [
+        ('FE', 'First Year (FE)'),
+        ('SE', 'Second Year (SE)'),
+        ('TE', 'Third Year (TE)'),
+        ('BE', 'Fourth Year (BE)'),
+    ]
+    BRANCH_CHOICES = [
+        ('COMPS', 'Computer Engineering'),
+        ('IT', 'Information Technology'),
+        ('AIML', 'CSE Artifical Intelligence and Machine Learning'),
+        ('DS', 'CSE Data Science'),
+        ('MECH', 'Mechanical Engineering'),
+        ('CIVIL', 'Civil Engineering'),
+    ]
+    
     username = models.CharField(max_length=150, unique=True, blank=True, null=True) # just to override the requirement
     moodleID = models.IntegerField(unique=True, primary_key=True)
     profile_image = models.ImageField(upload_to='profiles/', blank=True, null=True)
     phone_number = models.CharField(max_length=10, blank=True)
+    year = models.CharField(max_length=2, choices=YEAR_CHOICES, default="FE")
+    branch = models.CharField(max_length=6, choices=BRANCH_CHOICES, default="COMPS")
     is_prohibited = models.BooleanField(default=False)
 
     USERNAME_FIELD = 'moodleID'

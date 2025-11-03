@@ -148,3 +148,7 @@ from datetime import timedelta
 
 # Custom User Model
 AUTH_USER_MODEL = 'authentication.Student'
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+]
