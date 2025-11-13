@@ -11,7 +11,10 @@ urlpatterns = [
     # Registration URLs
     path('registrations/', views.registration_list, name='registration-list'), # Post feature is implemented, GET is to be worked up on
     path('registrations/<int:pk>/', views.registration_detail, name='registration-detail'),
-    
+    path('registrations/sport/<slug:sport_slug>/', views.registration_by_sport, name='registration-by-sport'),
+    path('user-registration-info/<str:username>/', views.user_registration_info, name='user-registration-info'),
+
+
     # Team URLs
     path('teams/', views.team_list, name='team-list'),
     path('teams/<int:pk>/', views.team_detail, name='team-detail'),
