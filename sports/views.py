@@ -1,10 +1,10 @@
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
-
+from rest_framework.views import APIView
 from authentication.models import Student
 from .models import Sport, Registration, Team
 from .serializers import SportSerializer, RegistrationSerializer, TeamSerializer
@@ -175,12 +175,29 @@ def registration_by_sport(request, sport_slug):
     serializer = RegistrationSerializer(registrations, many=True, context={'request': request})
     return Response(serializer.data)
 
-#Gives a user specefic information
+#Gives a user specefic registration information(self-only)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def user_registration_info(request, username):
     try:
         student = Student.objects.get(username=username)
+    except Student.DoesNotExist:
+        return Response({"error": "Student not found."}, status=404)
+
+    registrations = Registration.objects.filter(student=student)
+    serializer = RegistrationSerializer(registrations, many=True)
+    return Response({
+        "username": student.username,
+        "moodleID": student.moodleID,
+        "registrations": serializer.data
+    })
+
+#For Admin User to list all registrations
+@api_view(['GET'])
+@permission_classes([IsAdminUser])  # Only admins!
+def admin_registration_search_by_moodle(request, moodleID):
+    try:
+        student = Student.objects.get(moodleID=moodleID)
     except Student.DoesNotExist:
         return Response({"error": "Student not found."}, status=404)
 

@@ -13,7 +13,7 @@ urlpatterns = [
     path('registrations/<int:pk>/', views.registration_detail, name='registration-detail'),
     path('registrations/sport/<slug:sport_slug>/', views.registration_by_sport, name='registration-by-sport'),
     path('user-registration-info/<str:username>/', views.user_registration_info, name='user-registration-info'),
-
+    path("registration-search/<int:moodleID>/", views.admin_registration_search_by_moodle, name="admin-registration-search-moodle"),
 
     # Team URLs
     path('teams/', views.team_list, name='team-list'),
