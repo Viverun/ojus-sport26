@@ -178,9 +178,9 @@ def registration_by_sport(request, sport_slug):
 #Gives a user specefic registration information(self-only)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def user_registration_info(request, username):
+def user_registration_info(request):
     try:
-        student = Student.objects.get(username=username)
+        student = Student.objects.get(moodleID=request.user.moodleID)
     except Student.DoesNotExist:
         return Response({"error": "Student not found."}, status=404)
 
