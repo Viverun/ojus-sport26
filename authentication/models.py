@@ -56,7 +56,7 @@ class Student(AbstractUser):
     year = models.CharField(max_length=2, choices=YEAR_CHOICES, default="FE")
     branch = models.CharField(max_length=6, choices=BRANCH_CHOICES, default="COMPS")
     is_prohibited = models.BooleanField(default=False)
-
+    is_manageing = models.BooleanField(default=False)
     USERNAME_FIELD = 'moodleID'
     REQUIRED_FIELDS = ['email']
     class Meta:
