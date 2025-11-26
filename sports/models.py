@@ -66,19 +66,24 @@ class Team(models.Model):
     def __str__(self):
         return f"{self.name} ({self.branch})"
 
+
 class Results(models.Model):
-    player = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="result_player")
-    team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, blank=True, related_name="result_team")
+    player = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name="result_player")
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, null=True, blank=True, related_name="result_team")
     sport = models.ForeignKey(Sport, on_delete=models.CASCADE, related_name="result_sport")
     branch = models.CharField(max_length=6, choices=BRANCH_CHOICES, blank=True)
     position = models.PositiveIntegerField(help_text="1 for 1st, 2 for 2nd, 3 for 3rd")
+
     # 1. The Sport-Specific Score (Manually Adjusted by Admin)
     score = models.PositiveIntegerField(default=0, help_text="Points earned in the match/game itself")
+
     # 2. The Department Contribution (Auto-Calculated 3-2-1 based on Position)
     points = models.PositiveIntegerField(default=0, editable=False,
                                          help_text="Auto-calculated: 3 for 1st, 2 for 2nd, 1 for 3rd")
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
     class Meta:
         ordering = ['position']
         constraints = [
@@ -101,6 +106,7 @@ class Results(models.Model):
             models.Index(fields=['sport', 'position']),
             models.Index(fields=['sport', 'branch']),
         ]
+
     def clean(self):
         if not self.team and not self.player:
             raise ValidationError("You must select either a Team or a Player.")
@@ -110,12 +116,15 @@ class Results(models.Model):
             raise ValidationError(
                 f"The selected team '{self.team.name}' is registered for {self.team.sport.name}, not {self.sport.name}."
             )
+
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
+
     def __str__(self):
         winner = self.team.name if self.team else (self.player.username if self.player else "Unknown")
         return f"{self.sport.name} - #{self.position} {winner} (Score: {self.score} | Dept Pts: {self.points})"
+
 
 @receiver(pre_save, sender=Results)
 def calculate_leaderboard_data(sender, instance, **kwargs):
@@ -127,10 +136,12 @@ def calculate_leaderboard_data(sender, instance, **kwargs):
         instance.points = 1
     else:
         instance.points = 0
+
     if instance.team:
         instance.branch = instance.team.branch
     elif instance.player:
         try:
+            # Note: Ensure Registration is imported/available in this file scope
             registration = Registration.objects.filter(
                 student=instance.player,
                 sport=instance.sport
