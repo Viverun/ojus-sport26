@@ -6,9 +6,11 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Q, Sum, Max
 from rest_framework.views import APIView
 from authentication.models import Student
-from .models import Sport, Registration, Team, Results
-from .serializers import SportSerializer, RegistrationSerializer, TeamSerializer, ResultsSerializer, \
-    ResultUpdateSerializer
+from .models import Sport, Registration, Team, Results, TeamRequest
+from .serializers import (
+    SportSerializer, RegistrationSerializer, TeamSerializer, ResultsSerializer,
+    ResultUpdateSerializer, TeamCreateSerializer, TeamRequestSerializer
+)
 from django.db import transaction
 
 
@@ -162,6 +164,108 @@ def team_list(request):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_team(request, sport_slug):
+    sport = get_object_or_404(Sport, slug=sport_slug)
+    if not sport.isTeamBased:
+        return Response({"error": "This sport does not support teams"}, status=status.HTTP_400_BAD_REQUEST)
+
+    # validate registration
+    if not Registration.objects.filter(student=request.user, sport=sport).exists():
+        return Response({"error": "You must register for the sport before creating a team."}, status=status.HTTP_403_FORBIDDEN)
+
+    serializer = TeamCreateSerializer(data=request.data, context={'request': request, 'sport': sport})
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    # create team: manager and captain default to current user unless captain_moodleID provided and valid
+    name = serializer.validated_data.get('name')
+    branch = serializer.validated_data.get('branch', 'COMPS')
+    captain_moodle = serializer.validated_data.get('captain_moodleID', None)
+
+    captain_user = request.user
+    if captain_moodle:
+        possible = request.user.__class__.objects.filter(moodleID=captain_moodle).first()
+        if possible and Registration.objects.filter(student=possible, sport=sport).exists():
+            captain_user = possible
+
+    team = Team.objects.create(name=name, branch=branch, sport=sport, manager=request.user, captain=captain_user)
+    # Add the captain as a member of the team as well
+    
+    if captain_user:
+        print(captain_user)
+        team.members.add(captain_user)
+
+    resp = TeamSerializer(team, context={'request': request})
+    return Response(resp.data, status=status.HTTP_201_CREATED)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def join_team(request, team_id):
+    team = get_object_or_404(Team, pk=team_id)
+
+    # Ensure user is registered for the same sport
+    try:
+        registration = Registration.objects.get(student=request.user, sport=team.sport)
+    except Registration.DoesNotExist:
+        return Response({"error": "You must register for this sport before joining a team."}, status=status.HTTP_403_FORBIDDEN)
+
+    # Prevent duplicate requests
+    if TeamRequest.objects.filter(registeration=registration, team=team).exists():
+        return Response({"error": "You have already requested to join this team."}, status=status.HTTP_400_BAD_REQUEST)
+
+    treq = TeamRequest.objects.create(student=request.user, registeration=registration, team=team)
+    serializer = TeamRequestSerializer(treq, context={'request': request})
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_team_requests(request, team_id):
+    team = get_object_or_404(Team, pk=team_id)
+
+    # Only manager (or admins/coordinators) can view requests
+    is_manager = request.user == team.manager
+    is_coordinator = request.user == team.sport.primary or team.sport.secondary.filter(pk=request.user.pk).exists()
+    if not (is_manager or is_coordinator or request.user.is_staff or request.user.is_superuser):
+        return Response(status=status.HTTP_403_FORBIDDEN)
+
+    requests_qs = TeamRequest.objects.filter(team=team, accepted=False, denied=False).order_by('-time')
+    serializer = TeamRequestSerializer(requests_qs, many=True, context={'request': request})
+    return Response(serializer.data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def respond_to_request(request, request_id):
+    action = request.data.get('action')  # 'accept' or 'decline'
+    treq = get_object_or_404(TeamRequest, pk=request_id)
+    team = treq.team
+
+    # Only team manager can accept/decline
+    if request.user != team.manager:
+        return Response({"error": "Only the team manager can respond to requests."}, status=status.HTTP_403_FORBIDDEN)
+
+    if treq.accepted or treq.denied:
+        return Response({"error": "This request has already been handled."}, status=status.HTTP_400_BAD_REQUEST)
+
+    if action == 'accept':
+        treq.accepted = True
+        treq.denied = False
+        treq.save()
+        team.members.add(treq.student)
+        return Response({"status": "accepted"}, status=status.HTTP_200_OK)
+    elif action == 'decline':
+        treq.denied = True
+        treq.accepted = False
+        treq.save()
+        return Response({"status": "declined"}, status=status.HTTP_200_OK)
+    else:
+        return Response({"error": "Invalid action. Use 'accept' or 'decline'."}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
@@ -398,3 +502,18 @@ def department_leaderboard(request):
 @permission_classes([IsAuthenticated])
 def check_user_admin_status(request):
     return Response({"is_staff": request.user.is_staff}, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def user_team_status(request, sport_slug):
+    """Return whether the requesting user is a member of any team for the given sport.
+
+    Response format:
+      { "in_team": bool, "team": { "id": int, "name": str } | null }
+    """
+    sport = get_object_or_404(Sport, slug=sport_slug)
+    team = Team.objects.filter(sport=sport, members=request.user).first()
+    if team:
+        return Response({"in_team": True, "team": {"id": team.id, "name": team.name}})
+    return Response({"in_team": False, "team": None})

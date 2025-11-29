@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Sport, Registration, Team
+from .models import Sport, Registration, Team, TeamRequest
 
 @admin.register(Sport)
 class SportAdmin(admin.ModelAdmin):
@@ -39,3 +39,5 @@ class TeamAdmin(admin.ModelAdmin):
     def get_members_count(self, obj):
         return obj.members.count()
     get_members_count.short_description = 'Team Members'
+
+admin.site.register(TeamRequest)

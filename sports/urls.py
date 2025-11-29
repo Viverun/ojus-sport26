@@ -18,6 +18,11 @@ urlpatterns = [
     # Team URLs
     path('teams/', views.team_list, name='team-list'),
     path('teams/<int:pk>/', views.team_detail, name='team-detail'),
+    path('sports/<slug:sport_slug>/teams/create/', views.create_team, name='create-team'),
+    path('teams/<int:team_id>/join/', views.join_team, name='join-team'),
+    path('teams/<int:team_id>/requests/', views.list_team_requests, name='list-team-requests'),
+    path('team-requests/<int:request_id>/respond/', views.respond_to_request, name='respond-team-request'),
+    path('sports/<slug:sport_slug>/user-team/', views.user_team_status, name='user-team-status'),
 
     # Leaderboard URLS
     path('leaderboard/department/', views.department_leaderboard, name='department-leaderboard'),

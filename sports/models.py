@@ -47,6 +47,10 @@ class Registration(models.Model):
     branch = models.CharField(max_length=6, choices=BRANCH_CHOICES, default="COMPS")
     registered_on = models.DateTimeField(auto_now_add=True)
     registration_modified = models.DateTimeField(auto_now=True)
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['student', 'sport'], name='unique_student_sport_registration')
+        ]
 
 class Team(models.Model):
     BRANCH_CHOICES = [
@@ -128,3 +132,16 @@ def calculate_leaderboard_data(sender, instance, **kwargs):
 
         if registration:
             instance.branch = registration.branch
+
+class TeamRequest(models.Model):
+    student = models.ForeignKey(User, on_delete=models.CASCADE)
+    registeration = models.ForeignKey(Registration, on_delete=models.CASCADE)
+    team = models.ForeignKey(Team, on_delete=models.CASCADE)
+    accepted = models.BooleanField(default=False)
+    denied = models.BooleanField(default=False)
+    time =  models.DateTimeField(auto_now=True)
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['registeration', 'team'], name='unique_registration_team_request')
+        ]
+

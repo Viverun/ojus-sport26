@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Sport, Registration, Team, Results
+from .models import Sport, Registration, Team, Results, TeamRequest
 from django.contrib.auth import get_user_model
 from django.db import transaction
 
@@ -166,3 +166,54 @@ class ResultsSerializer(serializers.ModelSerializer):
 class ResultUpdateSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     position = serializers.IntegerField(min_value=1)
+
+
+class TeamCreateSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=50)
+    branch = serializers.ChoiceField(choices=Team.BRANCH_CHOICES, required=False)
+    captain_moodleID = serializers.IntegerField(required=False, allow_null=True)
+
+    def validate(self, attrs):
+        request = self.context.get('request')
+        sport = self.context.get('sport')
+        if request is None or sport is None:
+            raise serializers.ValidationError("Request and sport must be provided in context")
+
+        # Ensure the user is registered for the sport
+        if not Registration.objects.filter(student=request.user, sport=sport).exists():
+            raise serializers.ValidationError("You must register for the sport before creating a team.")
+
+        return attrs
+
+
+class TeamRequestSerializer(serializers.ModelSerializer):
+    student = UserSerializer(read_only=True)
+    registeration = serializers.PrimaryKeyRelatedField(queryset=Registration.objects.all(), write_only=True)
+    team = serializers.PrimaryKeyRelatedField(queryset=Team.objects.all())
+
+    class Meta:
+        model = TeamRequest
+        fields = ['id', 'student', 'registeration', 'team', 'accepted', 'denied', 'time']
+        read_only_fields = ['accepted', 'denied', 'time', 'student']
+
+    def validate(self, attrs):
+        request = self.context.get('request')
+        if request is None:
+            raise serializers.ValidationError("Request context required")
+
+        registration = attrs.get('registeration')
+        team = attrs.get('team')
+
+        # Ensure registration belongs to the requesting user
+        if registration.student != request.user:
+            raise serializers.ValidationError("Registration must belong to the requesting user.")
+
+        # Ensure registration and team are for the same sport
+        if registration.sport != team.sport:
+            raise serializers.ValidationError("Registration must be for the same sport as the team.")
+
+        # Prevent duplicate requests
+        if TeamRequest.objects.filter(registeration=registration, team=team).exists():
+            raise serializers.ValidationError("You have already requested to join this team.")
+
+        return attrs
