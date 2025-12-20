@@ -10,3 +10,4 @@ tzdata==2025.2
 gunicorn
 pandas
 whitenoise
+python-dotenv==1.2.1
