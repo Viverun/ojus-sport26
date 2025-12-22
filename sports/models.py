@@ -28,7 +28,7 @@ class Sport(models.Model):
     name = models.CharField(max_length=50)
     description = models.TextField(blank=True)
     isTeamBased = models.BooleanField(default=False)
-    primary = models.ManyToManyField(User, on_delete=models.SET_NULL, null=True, related_name='primary_sports')
+    primary = models.ManyToManyField(User, null=True, related_name='primary_sports')
     secondary = models.ManyToManyField(User, related_name='secondary_sports', blank=True)
     venue = models.CharField(max_length=50, default="")
     is_finalized = models.BooleanField(default=False)
