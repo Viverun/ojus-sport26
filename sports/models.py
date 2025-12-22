@@ -33,7 +33,7 @@ class Sport(models.Model):
     venue = models.CharField(max_length=50, default="")
     is_finalized = models.BooleanField(default=False)
     teamSize = models.IntegerField(default=0)
-    day = models.IntegerField(default=1,max=5)
+    day = models.IntegerField(default=1)
     time = models.CharField(max_length=0, default="")
     img = models.URLField()
 
