@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure-5iansg2f9m9!o=w1)a&gm!7ykm)n!cm1)k&+5)go)^-fp8086p
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["ojus-sport26.onrender.com", "34.180.73.149", "*.trycloudflare.com"]
+ALLOWED_HOSTS = ["ojus-sport26.onrender.com", "34.180.73.149", ".trycloudflare.com"]
 
 
 # Application definition
@@ -59,7 +59,7 @@ MIDDLEWARE = [
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-CSRF_TRUSTED_ORIGINS = ['*.trycloudflare.com']
+CSRF_TRUSTED_ORIGINS = ["https://*.trycloudflare.com", "https://ojus-sport26.onrender.com"]
 ROOT_URLCONF = 'ojus_sports26.urls'
 
 TEMPLATES = [
