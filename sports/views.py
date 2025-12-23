@@ -186,7 +186,7 @@ def create_team(request, sport_slug):
 
     # create team: manager and captain default to current user unless captain_moodleID provided and valid
     name = serializer.validated_data.get('name')
-    branch = serializer.validated_data.get('branch', 'COMPS')
+    branch = request.user.branch
     captain_moodle = serializer.validated_data.get('captain_moodleID', None)
 
     captain_user = request.user
