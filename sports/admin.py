@@ -23,7 +23,7 @@ class SportAdmin(admin.ModelAdmin):
 
 @admin.register(Registration)
 class RegistrationAdmin(admin.ModelAdmin):
-    list_display = ('student', 'sport', 'year', 'branch', 'registered_on')
+    list_display = ('student__first_name','student__last_name', 'sport', 'year', 'branch', 'registered_on')
     list_filter = ('year', 'branch', 'sport', 'registered_on')
     search_fields = ('student__username', 'student__email', 'sport__name')
     date_hierarchy = 'registered_on'
