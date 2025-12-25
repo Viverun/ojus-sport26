@@ -26,7 +26,7 @@ class RegistrationAdmin(admin.ModelAdmin):
     list_display = ('student__first_name','student__last_name', 'sport', 'year', 'branch', 'registered_on')
     list_filter = ('year', 'branch', 'sport', 'registered_on')
     search_fields = ('student__username', 'student__email', 'sport__name')
-    date_hierarchy = 'registered_on'
+    # date_hierarchy = 'registered_on'
     readonly_fields = ('registered_on', 'registration_modified')
 
 @admin.register(Team)
